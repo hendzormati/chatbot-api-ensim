@@ -1,80 +1,86 @@
 package fr.ensim.interop.introrest.controller;
 
-import fr.ensim.interop.introrest.model.Joke;
+import fr.ensim.interop.introrest.api.BlagueApi;
+import fr.ensim.interop.introrest.model.generated.Joke;
+import fr.ensim.interop.introrest.model.generated.JokeRequest;
+import fr.ensim.interop.introrest.model.generated.RateRequest;
 import fr.ensim.interop.introrest.service.JokeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
-@RequestMapping("/api/jokes")
-public class JokeController {
+public class JokeController implements BlagueApi {
 
     @Autowired
     private JokeService jokeService;
 
-    @GetMapping
-    public List<Joke> getAll() {
-        return jokeService.getAll();
+    @Override
+    public ResponseEntity<List<Joke>> getAllJokes() {
+        return ResponseEntity.ok(jokeService.getAll());
     }
 
-    @GetMapping("/random")
-    public ResponseEntity<Joke> getRandom() {
+    @Override
+    public ResponseEntity<Joke> getRandomJoke() {
         return ResponseEntity.ok(jokeService.getRandom());
     }
 
-    @GetMapping("/best")
-    public ResponseEntity<?> getBest() {
+    @Override
+    public ResponseEntity<Joke> getBestJoke() {
         return jokeService.getBest()
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/worst")
-    public ResponseEntity<?> getWorst() {
+    @Override
+    public ResponseEntity<Joke> getWorstJoke() {
         return jokeService.getWorst()
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getById(@PathVariable Long id) {
+    @Override
+    public ResponseEntity<Joke> getJokeById(Long id) {
         return jokeService.getById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
-    public ResponseEntity<Joke> add(@RequestBody Map<String, Object> body) {
-        String title  = (String) body.get("title");
-        String text   = (String) body.get("text");
-        double rating = ((Number) body.get("rating")).doubleValue();
-        return ResponseEntity.status(201).body(jokeService.add(title, text, rating));
+    @Override
+    public ResponseEntity<List<Joke>> getJokeByTitle(String titre) {
+        return jokeService.getByTitle(titre)
+                .map(joke -> ResponseEntity.ok(List.of(joke)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        String title  = (String) body.get("title");
-        String text   = (String) body.get("text");
-        double rating = ((Number) body.get("rating")).doubleValue();
-        return jokeService.update(id, title, text, rating)
+    @Override
+    public ResponseEntity<Joke> addJoke(JokeRequest jokeRequest) {
+        Joke created = jokeService.add(
+                jokeRequest.getTitle(),
+                jokeRequest.getText(),
+                jokeRequest.getRating());
+        return ResponseEntity.status(201).body(created);
+    }
+
+    @Override
+    public ResponseEntity<Joke> updateJoke(Long id, JokeRequest jokeRequest) {
+        return jokeService.update(id, jokeRequest.getTitle(),
+                jokeRequest.getText(), jokeRequest.getRating())
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PatchMapping("/{id}/rate")
-    public ResponseEntity<?> rate(@PathVariable Long id, @RequestBody Map<String, Number> body) {
-        double newRating = body.get("rating").doubleValue();
-        return jokeService.rate(id, newRating)
+    @Override
+    public ResponseEntity<Joke> rateJoke(Long id, RateRequest rateRequest) {
+        return jokeService.rate(id, rateRequest.getRating())
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
+    @Override
+    public ResponseEntity<Void> deleteJoke(Long id) {
         return jokeService.delete(id)
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();

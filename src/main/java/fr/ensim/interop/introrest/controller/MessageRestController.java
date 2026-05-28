@@ -1,41 +1,37 @@
 package fr.ensim.interop.introrest.controller;
 
-import fr.ensim.interop.introrest.service.JokeService;
+import fr.ensim.interop.introrest.api.MessageApi;
+import fr.ensim.interop.introrest.model.generated.SendMessageRequest;
+import fr.ensim.interop.introrest.model.generated.SendMessagesRequest;
+import fr.ensim.interop.introrest.model.generated.MessageResponse;
 import fr.ensim.interop.introrest.service.TelegramService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Map;
-
 @RestController
-@RequestMapping("/api")
-public class MessageRestController {
+public class MessageRestController implements MessageApi {
 
 	@Autowired
 	private TelegramService telegramService;
 
-	@PostMapping("/message")
-	public ResponseEntity<String> sendMessage(@RequestBody Map<String, String> body) {
-		String chatId = body.get("chatId");
-		String text   = body.get("text");
+	@Override
+	public ResponseEntity<MessageResponse> sendMessage(SendMessageRequest request) {
+		telegramService.sendMessage(request.getChatId(), request.getText());
+		telegramService.sendMessage(request.getChatId(),
+				"Bonjour ! Je suis ton assistant. Envoie blague ou meteo [ville]* !");
 
-		telegramService.sendMessage(chatId, text);
-		telegramService.sendMessage(chatId, "Bonjour ! Je suis ton assistant. Comment puis-je t'aider ?");
-
-		return ResponseEntity.ok("Message envoyé !");
+		MessageResponse response = new MessageResponse();
+		response.setSuccess(true);
+		response.setChatId(request.getChatId());
+		return ResponseEntity.ok(response);
 	}
-	@PostMapping("/messages")
-	public ResponseEntity<String> sendMessages(@RequestBody Map<String, Object> body) {
-		String chatId = (String) body.get("chatId");
-		List<String> texts = (List<String>) body.get("texts");
-		for (String text : texts) {
-			telegramService.sendMessage(chatId, text);
+
+	@Override
+	public ResponseEntity<String> sendMessages(SendMessagesRequest request) {
+		for (String text : request.getTexts()) {
+			telegramService.sendMessage(request.getChatId(), text);
 		}
-		return ResponseEntity.ok(texts.size() + " message(s) envoyé(s) !");
+		return ResponseEntity.ok(request.getTexts().size() + " message(s) envoyé(s) !");
 	}
 }

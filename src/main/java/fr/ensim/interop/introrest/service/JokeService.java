@@ -1,6 +1,6 @@
 package fr.ensim.interop.introrest.service;
 
-import fr.ensim.interop.introrest.model.Joke;
+import fr.ensim.interop.introrest.model.generated.Joke;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -14,21 +14,28 @@ public class JokeService {
     private final Random random = new Random();
 
     public JokeService() {
-        jokes.add(new Joke(counter.getAndIncrement(), "L'école",
+        jokes.add(buildJoke(counter.getAndIncrement(), "L'école",
                 "Un élève dit à son prof : « J'ai pas fait mes devoirs car j'ai perdu ma mémoire. »\nLe prof : « Depuis quand ? »\nL'élève : « Depuis quand quoi ? »", 6.5));
-        jokes.add(new Joke(counter.getAndIncrement(), "Le médecin",
+        jokes.add(buildJoke(counter.getAndIncrement(), "Le médecin",
                 "Patient : « Docteur, je me sens pas bien. »\nMédecin : « Déshabilles-vous. »\nPatient : « Mais c'est par téléphone ! »\nMédecin : « Ah... restez en ligne. »", 8.5));
-        jokes.add(new Joke(counter.getAndIncrement(), "Le programmeur",
+        jokes.add(buildJoke(counter.getAndIncrement(), "Le programmeur",
                 "Pourquoi les programmeurs préfèrent le noir ?\nParce que la lumière attire les bugs !", 9.0));
-        jokes.add(new Joke(counter.getAndIncrement(), "L'hôpital",
+        jokes.add(buildJoke(counter.getAndIncrement(), "L'hôpital",
                 "Malade : « J'ai avalé un stylo ! »\nInfirmière : « J'arrive, qu'est-ce que vous faites en attendant ? »\nMalade : « J'utilise un crayon. »", 3.0));
-        jokes.add(new Joke(counter.getAndIncrement(), "La mémoire",
+        jokes.add(buildJoke(counter.getAndIncrement(), "La mémoire",
                 "Ma femme dit que j'ai une mauvaise mémoire.\nJ'étais surpris... pour la 3ème fois ce soir.", 2.0));
     }
     public List<Joke> getAll() {
         return jokes;
     }
-
+    private Joke buildJoke(Long id, String title, String text, double rating) {
+        Joke j = new Joke();
+        j.setId(id);
+        j.setTitle(title);
+        j.setText(text);
+        j.setRating(rating);
+        return j;
+    }
     public Optional<Joke> getById(Long id) {
         return jokes.stream().filter(j -> j.getId().equals(id)).findFirst();
     }
@@ -54,7 +61,7 @@ public class JokeService {
 
 
     public Joke add(String title, String text, double rating) {
-        Joke joke = new Joke(counter.getAndIncrement(), title, text, rating);
+        Joke joke = buildJoke(counter.getAndIncrement(), title, text, rating);
         jokes.add(joke);
         return joke;
     }

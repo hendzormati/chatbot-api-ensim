@@ -1,0 +1,566 @@
+openapi: 3.0.3
+info:
+  title: ChatBotIntero
+  description: API REST du ChatBot Telegram Interopérabilité
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:9090
+    description: Serveur local
+
+security:
+  - ApiKeyAuth: []
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+      description: Token d'accès requis pour toutes les opérations
+
+  schemas:
+
+    SendMessageRequest:
+      type: object
+      required: [chatId, text]
+      properties:
+        chatId:
+          type: string
+          example: "123456789"
+        text:
+          type: string
+          example: "Bonjour !"
+
+    SendMessagesRequest:
+      type: object
+      required: [chatId, texts]
+      properties:
+        chatId:
+          type: string
+          example: "123456789"
+        texts:
+          type: array
+          items:
+            type: string
+          example: ["Bonjour !", "Comment vas-tu ?"]
+
+    MessageResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        messageId:
+          type: integer
+          example: 42
+        chatId:
+          type: string
+          example: "123456789"
+
+    Joke:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        title:
+          type: string
+          example: "Le programmeur"
+        text:
+          type: string
+          example: "Pourquoi les programmeurs préfèrent le noir ? Parce que la lumière attire les bugs !"
+        rating:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 10
+          example: 9.0
+
+    JokeRequest:
+      type: object
+      required: [title, text, rating]
+      properties:
+        title:
+          type: string
+          example: "Ma nouvelle blague"
+        text:
+          type: string
+          example: "Texte de la blague..."
+        rating:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 10
+          example: 7.5
+
+    RateRequest:
+      type: object
+      required: [rating]
+      properties:
+        rating:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 10
+          example: 8.0
+
+    MeteoResponse:
+      type: object
+      properties:
+        ville:
+          type: string
+          example: "Paris"
+        meteo:
+          type: string
+          example: "Clouds"
+        details:
+          type: string
+          example: "nuageux"
+        temperature:
+          type: number
+          format: double
+          example: 18.5
+
+    ForecastDay:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2025-03-16"
+        meteo:
+          type: string
+          example: "Rain"
+        details:
+          type: string
+          example: "légère pluie"
+        temperatureMatin:
+          type: number
+          format: double
+          example: 12.0
+        temperatureApresMidi:
+          type: number
+          format: double
+          example: 17.0
+
+    ForecastResponse:
+      type: object
+      properties:
+        ville:
+          type: string
+          example: "Paris"
+        today:
+          $ref: '#/components/schemas/MeteoResponse'
+        forecast:
+          type: array
+          items:
+            $ref: '#/components/schemas/ForecastDay'
+
+    FilmResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 550
+        titre:
+          type: string
+          example: "Fight Club"
+        synopsis:
+          type: string
+          example: "Un employé de bureau insomniaque forme un club de combat clandestin..."
+        note:
+          type: number
+          format: double
+          example: 8.4
+        annee:
+          type: string
+          example: "1999"
+        affiche:
+          type: string
+          example: "https://image.tmdb.org/t/p/w500/..."
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 404
+        error:
+          type: string
+          example: "Not Found"
+        message:
+          type: string
+          example: "Blague id=99 introuvable."
+        timestamp:
+          type: string
+          format: date-time
+
+paths:
+
+  /api/message:
+    post:
+      tags: [Message]
+      summary: Envoyer un message sur Telegram
+      operationId: sendMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+      responses:
+        '200':
+          description: Message envoyé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: chatId ou text manquant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: ChatId introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token API manquant ou invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/messages:
+    post:
+      tags: [Message]
+      summary: Envoyer plusieurs messages d'un coup
+      operationId: sendMessages
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessagesRequest'
+      responses:
+        '200':
+          description: Messages envoyés
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "3 message(s) envoyé(s) !"
+        '401':
+          description: Token API invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/jokes:
+    get:
+      tags: [Blague]
+      summary: Lister toutes les blagues
+      operationId: getAllJokes
+      responses:
+        '200':
+          description: Liste des blagues
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Joke'
+        '401':
+          description: Token API invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Blague]
+      summary: Ajouter une blague
+      operationId: addJoke
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JokeRequest'
+      responses:
+        '201':
+          description: Blague créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Joke'
+        '400':
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token API invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/jokes/random:
+    get:
+      tags: [Blague]
+      summary: Obtenir une blague aléatoire
+      operationId: getRandomJoke
+      responses:
+        '200':
+          description: Blague aléatoire
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Joke'
+
+  /api/jokes/best:
+    get:
+      tags: [Blague]
+      summary: Obtenir la meilleure blague (note max)
+      operationId: getBestJoke
+      responses:
+        '200':
+          description: Meilleure blague
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Joke'
+
+  /api/jokes/worst:
+    get:
+      tags: [Blague]
+      summary: Obtenir la blague la moins bien notée
+      operationId: getWorstJoke
+      responses:
+        '200':
+          description: Blague nulle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Joke'
+
+  /api/jokes/{id}:
+    get:
+      tags: [Blague]
+      summary: Obtenir une blague par son id
+      operationId: getJokeById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Blague trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Joke'
+        '404':
+          description: Blague introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Blague]
+      summary: Modifier une blague
+      operationId: updateJoke
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JokeRequest'
+      responses:
+        '200':
+          description: Blague mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Joke'
+        '404':
+          description: Blague introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Blague]
+      summary: Supprimer une blague
+      operationId: deleteJoke
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Blague supprimée
+        '404':
+          description: Blague introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/jokes/{id}/rate:
+    patch:
+      tags: [Blague]
+      summary: Noter une blague sur 10
+      operationId: rateJoke
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RateRequest'
+      responses:
+        '200':
+          description: Note mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Joke'
+        '404':
+          description: Blague introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/jokes/search:
+    get:
+      tags: [Blague]
+      summary: Rechercher une blague par titre
+      operationId: getJokeByTitle
+      parameters:
+        - name: titre
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "programmeur"
+      responses:
+        '200':
+          description: Blague(s) trouvée(s)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Joke'
+        '404':
+          description: Aucune blague trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/meteo:
+    get:
+      tags: [Météo]
+      summary: Météo du jour pour une ville
+      operationId: getMeteo
+      parameters:
+        - name: ville
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "Le Mans"
+      responses:
+        '200':
+          description: Météo du jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeteoResponse'
+        '400':
+          description: Ville introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/meteo/forecast:
+    get:
+      tags: [Météo]
+      summary: Météo du jour + prévisions 2 prochains jours
+      operationId: getMeteoForecast
+      parameters:
+        - name: ville
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "Paris"
+      responses:
+        '200':
+          description: Météo + prévisions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForecastResponse'
+        '400':
+          description: Ville introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/film:
+    get:
+      tags: [Film]
+      summary: Rechercher un film (synopsis + note)
+      operationId: searchFilm
+      parameters:
+        - name: titre
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "Inception"
+      responses:
+        '200':
+          description: Informations du film
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilmResponse'
+        '404':
+          description: Film introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

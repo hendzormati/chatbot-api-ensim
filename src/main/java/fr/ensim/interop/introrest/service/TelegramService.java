@@ -29,13 +29,29 @@ public class TelegramService {
 
         restTemplate.postForObject(url, body, Map.class);
     }
+
+    public void sendMessage(String chatId, String text, Integer replyToMessageId) {
+        String url = baseUrl + botToken + "/sendMessage";
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("chat_id", chatId);
+        body.put("text", text);
+        if (replyToMessageId != null) {
+            body.put("reply_to_message_id", replyToMessageId);
+        }
+
+        restTemplate.postForObject(url, body, Map.class);
+    }
+
     private String getBotUrl() {
         return baseUrl + botToken;
     }
+
     public List<Update> getUpdates(long offset) {
         String url = getBotUrl() + "/getUpdates?offset=" + offset;
         ApiResponseUpdateTelegram response = restTemplate.getForObject(url, ApiResponseUpdateTelegram.class);
-        if (response == null || !response.getOk()) return List.of();
+        if (response == null || !response.getOk())
+            return List.of();
         return response.getResult();
     }
 }
