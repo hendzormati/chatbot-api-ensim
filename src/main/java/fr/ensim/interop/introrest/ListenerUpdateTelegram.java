@@ -1,10 +1,12 @@
 package fr.ensim.interop.introrest;
 
 import fr.ensim.interop.introrest.model.Meteo;
+import fr.ensim.interop.introrest.model.generated.FilmResponse;
 import fr.ensim.interop.introrest.model.generated.ForecastDay;
 import fr.ensim.interop.introrest.model.generated.ForecastResponse;
 import fr.ensim.interop.introrest.model.generated.Joke;
 import fr.ensim.interop.introrest.model.telegram.Update;
+import fr.ensim.interop.introrest.service.FilmService;
 import fr.ensim.interop.introrest.service.JokeService;
 import fr.ensim.interop.introrest.service.TelegramService;
 import fr.ensim.interop.introrest.service.WeatherService;
@@ -26,6 +28,8 @@ public class ListenerUpdateTelegram {
 	private JokeService jokeService;
 	@Autowired
 	private WeatherService weatherService;
+	@Autowired
+	private FilmService filmService;
 	private long lastUpdateId = 0;
 
 	@PostConstruct
@@ -89,6 +93,7 @@ public class ListenerUpdateTelegram {
 						"Bonjour ! Voici ce que je sais faire :\n\n"
 								+ "• *meteo Paris* : météo d'une ville 🌤\n"
 								+ "• *previsions Paris* : prévisions 2 jours \n"
+								+ "• *film Inception* : synopsis + note + affiche\n"
 								+ "• *blague* : blague aléatoire\n"
 								+ "• *bonne blague* : la meilleure \n"
 								+ "• *blague nulle* : la pire \n"
@@ -96,7 +101,7 @@ public class ListenerUpdateTelegram {
 								+ "• *noter blague 3 note 8* : noter une blague\n"
 								+ "• *supprimer blague 3* : supprimer\n"
 								+ "• *titre blague <motclé>* : chercher une blague par titre\n"
-								+ "• *ajouter blague | titre | texte | note* : créer une blague\n"
+								+ "• *ajouter blague titre | texte | note* : créer une blague\n"
 								+ "• *modifier blague 3 | titre | texte | note* : modifier une blague existante\n");
 			} else if (text.startsWith("previsions") || text.startsWith("prévisions") || text.startsWith("forecast")) {
 				String ville = extractCity(text);
@@ -123,7 +128,7 @@ public class ListenerUpdateTelegram {
 				String payload = text.substring("ajouter blague".length()).trim();
 				String[] parts = payload.split("\\|", 3);
 				if (parts.length < 3) {
-					reply(update, "⚠ Format invalide. Exemple : ajouter blague | titre | texte | note");
+					reply(update, "⚠ Format invalide. Exemple : ajouter blague titre | texte | note");
 					return;
 				}
 				try {
@@ -133,7 +138,7 @@ public class ListenerUpdateTelegram {
 					Joke joke = jokeService.add(title, jokeText, rating);
 					reply(update, "Blague ajoutée !\n\n" + formatJoke(joke));
 				} catch (NumberFormatException e) {
-					reply(update, "⚠ La note doit être un nombre. Exemple : ajouter blague | titre | texte | 7.5");
+					reply(update, "⚠ La note doit être un nombre. Exemple : ajouter blague titre | texte | 7.5");
 				}
 			} else if (text.startsWith("modifier blague") || text.startsWith("update blague")) {
 				String payload = text
@@ -193,7 +198,36 @@ public class ListenerUpdateTelegram {
 
 			} else if (text.contains("blague")) {
 				reply(update, formatJoke(jokeService.getRandom()));
+			}else if (text.startsWith("film ")) {
+				String titre = text.substring(5).trim();
+				try {
+					FilmResponse film = filmService.searchFilm(titre);
+					String caption = filmService.formatCaption(film);
+					String poster = film.getAffiche();
+					if (poster != null && !poster.equals("N/A")) {
+						replyPhoto(update, poster, caption);
+					} else {
+						reply(update,caption);
+					}
+
+				} catch (RuntimeException e) {
+					reply(update, "Film introuvable : " + titre);
+				}
 			}
+			 else reply(update,
+					"Pardon je ne comprends pas  ! Voici tout ce que je sais faire :\n\n"
+							+ "• *meteo Paris* : météo d'une ville 🌤\n"
+							+ "• *previsions Paris* : prévisions 2 jours \n"
+							+ "• *film Inception* : synopsis + note + affiche\n"
+							+ "• *blague* : blague aléatoire\n"
+							+ "• *bonne blague* : la meilleure \n"
+							+ "• *blague nulle* : la pire \n"
+							+ "• *voir blague 3* : blague par id\n"
+							+ "• *noter blague 3 note 8* : noter une blague\n"
+							+ "• *supprimer blague 3* : supprimer\n"
+							+ "• *titre blague <motclé>* : chercher une blague par titre\n"
+							+ "• *ajouter blague titre | texte | note* : créer une blague\n"
+							+ "• *modifier blague 3 | titre | texte | note* : modifier une blague existante\n");
 
 		} catch (NumberFormatException e) {
 			reply(update, "⚠ Format invalide. Exemple : *noter blague 3 note 7*");
@@ -232,5 +266,10 @@ public class ListenerUpdateTelegram {
 		String chatId = String.valueOf(update.getMessage().getChat().getId());
 		Integer replyTo = update.getMessage().getMessageId();
 		telegramService.sendMessage(chatId, text, replyTo);
+	}
+	private void replyPhoto(Update update, String photoUrl, String caption) {
+		String chatId  = String.valueOf(update.getMessage().getChat().getId());
+		Integer replyTo = update.getMessage().getMessageId();
+		telegramService.sendPhoto(chatId, photoUrl, caption, replyTo);
 	}
 }

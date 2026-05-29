@@ -9,7 +9,6 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.time.LocalDateTime;
 
 @Component
 public class ApiKeyInterceptor implements HandlerInterceptor {
@@ -18,7 +17,8 @@ public class ApiKeyInterceptor implements HandlerInterceptor {
     private String apiToken;
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+            throws Exception {
         String headerToken = request.getHeader("X-API-KEY");
         if (apiToken == null || !apiToken.equals(headerToken)) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

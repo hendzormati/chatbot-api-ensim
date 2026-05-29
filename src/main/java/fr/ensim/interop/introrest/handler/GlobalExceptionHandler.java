@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -31,14 +31,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
-        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Erreur serveur interne");
+        String message = ex.getMessage() != null ? ex.getMessage() : "Erreur serveur interne";
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message);
     }
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(HttpStatus status, String message) {
         ErrorResponse error = new ErrorResponse()
                 .status(status.value())
                 .error(status.getReasonPhrase())
-                .message(message);
+                .message(message)
+                .timestamp(OffsetDateTime.now());
         return ResponseEntity.status(status).body(error);
     }
 }

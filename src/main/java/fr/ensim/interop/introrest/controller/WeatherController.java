@@ -17,26 +17,18 @@ public class WeatherController implements MtoApi {
 
     @Override
     public ResponseEntity<MeteoResponse> getMeteo(String ville) {
-        try {
-            Meteo meteo = weatherService.getMeteoByCity(ville);
-            MeteoResponse response = new MeteoResponse()
-                    .ville(ville)
-                    .meteo(meteo.getMeteo())
-                    .details(meteo.getDetails())
-                    .temperature(meteo.getTemperature());
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        Meteo meteo = weatherService.getMeteoByCity(ville);
+        MeteoResponse response = new MeteoResponse()
+                .ville(ville)
+                .meteo(meteo.getMeteo())
+                .details(meteo.getDetails())
+                .temperature(meteo.getTemperature());
+        return ResponseEntity.ok(response);
     }
 
     @Override
     public ResponseEntity<ForecastResponse> getMeteoForecast(String ville) {
-        try {
-            ForecastResponse forecast = weatherService.getForecast(ville);
-            return ResponseEntity.ok(forecast);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        ForecastResponse forecast = weatherService.getForecast(ville);
+        return ResponseEntity.ok(forecast);
     }
 }

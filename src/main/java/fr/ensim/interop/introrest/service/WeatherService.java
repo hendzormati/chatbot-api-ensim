@@ -64,7 +64,7 @@ public class WeatherService {
 
         City[] cities = response.getBody();
         if (cities == null || cities.length == 0) {
-            throw new RuntimeException("Ville introuvable : " + nomVille);
+            throw new NotFoundException("Ville introuvable : " + nomVille);
         }
         City city = cities[0];
 
